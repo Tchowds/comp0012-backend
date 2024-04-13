@@ -35,4 +35,6 @@ public class DynamicVariableFolding {
         b = a + 2;
         return a * b;
     }
+
+
 }
