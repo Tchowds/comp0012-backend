@@ -19,7 +19,7 @@ import java.util.List;
 
 public class ConstantFolder {
 
-    private JavaClass optimized;
+    private JavaClass optimised;
     private JavaClass original;
 
     private ClassGen cgen;
@@ -43,7 +43,7 @@ public class ConstantFolder {
 
     // ---OPTIMISATION---
     
-    public void optimize() {
+    public void optimise() {
         cgen = new ClassGen(original);
         cgen.setMajor(50);
         cgen.setMinor(0);
@@ -54,11 +54,11 @@ public class ConstantFolder {
         methodInstructions = new Stack<InstructionHandle>();
 
         // Implement your optimization here
-        runOptimization();
-        this.optimized = cgen.getJavaClass();
+        runOptimisation();
+        this.optimised = cgen.getJavaClass();
     }
 
-    private void runOptimization(){
+    private void runOptimisation(){
         int numberOfMethods = cgen.getMethods().length;
         for (int methodPosition = 0; methodPosition < numberOfMethods; methodPosition++ ) {
 
@@ -102,6 +102,16 @@ public class ConstantFolder {
         }
     }
 
+    // Method that converts the value on the top of the stack to another type.
+    private void handleConversion(InstructionHandle handle, InstructionList instructionList) {
+        if (checkLoadConst(methodInstructions.peek().getInstruction()) || !inLoop) {
+            values.push(convertType(handle.getInstruction(), values.pop()));
+            delInstruction(instructionList, methodInstructions.pop());
+            handle.setInstruction(pushConst(values.peek(), cpgen));
+            methodInstructions.push(handle);
+        }
+    }
+
     private void handleStoreLoad(Instruction instruction, InstructionHandle handle, InstructionList instructionList){
         if(instruction instanceof StoreInstruction){
             methodInstructions.pop();
@@ -142,16 +152,6 @@ public class ConstantFolder {
             delInstruction(instructionList, methodInstructions.pop());
             values.push(result);
             handle.setInstruction(pushConst(result, cpgen));
-            methodInstructions.push(handle);
-        }
-    }
-
-    // Method that converts the value on the top of the stack to another type.
-    private void handleConversion(InstructionHandle handle, InstructionList instructionList) {
-        if (checkLoadConst(methodInstructions.peek().getInstruction()) || !inLoop) {
-            values.push(convertType(handle.getInstruction(), values.pop()));
-            delInstruction(instructionList, methodInstructions.pop());
-            handle.setInstruction(pushConst(values.peek(), cpgen));
             methodInstructions.push(handle);
         }
     }
@@ -327,11 +327,11 @@ public class ConstantFolder {
 
     // ---OUTPUT---
 	public void write(String optimisedFilePath) {
-        this.optimize();
+        this.optimise();
 
         try {
             FileOutputStream out = new FileOutputStream(new File(optimisedFilePath));
-            this.optimized.dump(out);
+            this.optimised.dump(out);
         } catch (FileNotFoundException e) {
             // Auto-generated catch block
             e.printStackTrace();

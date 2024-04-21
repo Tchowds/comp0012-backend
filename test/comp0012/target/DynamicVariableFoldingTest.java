@@ -36,6 +36,14 @@ public class DynamicVariableFoldingTest
         assertEquals(1301, dvf.methodOne());
     }
 
+    // @Test
+    // public void testMethodTwoOut()
+    // {
+    //     dvf.methodTwo();
+    //     assertEquals("true\n",  outContent.toString());
+    // }
+
+    // Platform-independent line separator test
     @Test
     public void testMethodTwoOut()
     {

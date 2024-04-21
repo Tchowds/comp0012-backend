@@ -29,6 +29,13 @@ public class SimpleFoldingTest {
         System.setOut(null);
     }
 
+    // @Test
+    // public void testSimple(){
+    //     sf.simple();
+    //     assertEquals("12412\n", outContent.toString());
+    // }
+
+    // Platform-independent line separator test
     @Test
     public void testSimple(){
         sf.simple();
