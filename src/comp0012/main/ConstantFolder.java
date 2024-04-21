@@ -11,9 +11,10 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Stack;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Stack;
+
 
 
 public class ConstantFolder {
@@ -70,27 +71,20 @@ public class ConstantFolder {
 
             findLoopTerminators(instructionList);
             for (InstructionHandle handle : instructionList.getInstructionHandles()) {
-                // Main Optimization (SimpleFolding, ConstantVariableFolding, DynamicVariableFolding).
                 handleInstruction(handle, instructionList);
             }
 
             instructionList.setPositions(true);
-            replaceMethodCode(method, methodGen);
+            methodGen.setMaxStack();
+            methodGen.setMaxLocals();
+            Method newMethod = methodGen.getMethod();
+            cgen.replaceMethod(method, newMethod);
         }
-    }
-
-
-    // replaces the original method code with the optimized method code.
-    private void replaceMethodCode(Method originalMethod, MethodGen methodGen){
-        methodGen.setMaxStack();
-        methodGen.setMaxLocals();
-        Method newMethod = methodGen.getMethod();
-        cgen.replaceMethod(originalMethod, newMethod);
     }
 
     // ---HANDLERS---
 
-    // handles the instruction inside of the InstructionHandle by first checking its type then optimising it.
+    // optimises the instruction inside instructionList
     private void handleInstruction(InstructionHandle handle, InstructionList instructionList){
         Instruction instruction = handle.getInstruction(); 
 
