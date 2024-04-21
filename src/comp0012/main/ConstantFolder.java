@@ -81,7 +81,6 @@ public class ConstantFolder {
         int numberOfMethods = cgen.getMethods().length;
         for (int methodPosition = 0; methodPosition < numberOfMethods; methodPosition++ ) {
             runRegularOptimization(methodPosition);
-            runPeepHoleOptimization(methodPosition);
         }
     }
 
@@ -90,14 +89,6 @@ public class ConstantFolder {
         clearDataContainers();
     }
 
-    private void runPeepHoleOptimization(int methodPosition){
-        boolean optimized = false;
-        while (!optimized){
-            // keeps doing peephole optimization until there are no more changes.
-            optimized = peepHoleOptimization(cgen.getMethodAt(methodPosition));
-            clearDataContainers();
-        }
-    }
 
     // replaces the original method code with the optimized method code.
     private void replaceMethodCode(Method originalMethod, MethodGen methodGen){
@@ -247,69 +238,7 @@ public class ConstantFolder {
         condenseOperationInstructions(instructionList, handle, valuesStack.peek()); // using peek because it needs to be in stack.
     }
 
-    // <=========================================== PeepHole Optimization ============================================>
 
-    private boolean peepHoleOptimization(Method method){
-        InstructionList instructionList = new InstructionList(method.getCode().getCode()); // gets code and makes an list of Instructions.
-        MethodGen methodGen = new MethodGen(method.getAccessFlags(), method.getReturnType(), method.getArgumentTypes(),
-                null, method.getName(), cgen.getClassName(), instructionList, cpgen);
-
-        loadLoopBounds(instructionList);
-        for (InstructionHandle handle : instructionList.getInstructionHandles()) {
-            checkInstruction(handle);
-        }
-        boolean optimized = removeDeadCode(instructionList);
-
-        instructionList.setPositions(true);
-        replaceMethodCode(method, methodGen);
-        return optimized;
-    }
-
-    // deletes dead code, i.e. variables that are not used.
-    private boolean removeDeadCode(InstructionList instructionList){
-        boolean optimized = true;
-        for (int key: variableUsed.keySet()){
-            if (!variableUsed.get(key)){
-                optimized = false;
-                removeHandle(instructionList, variableInstructions.get(key)[0]); // delete the LOAD instruction.
-                removeHandle(instructionList, variableInstructions.get(key)[1]); // delete the STORE instruction.
-            }
-        }
-        return optimized;
-    }
-
-    //                       <===================== Instruction Recorders =====================>
-
-    // handles the instruction inside of the InstructionHandle by first checking its type then optimising it.
-    private void checkInstruction(InstructionHandle handle){
-        Instruction instruction = handle.getInstruction(); // gets the instruction from the instruction handle.
-
-        // Load Instructions
-        if (isLoadConstantValueInstruction(instruction)) checkLoad(handle);
-        else if (instruction instanceof LoadInstruction) checkVariableLoad(handle);
-
-        // Store Instructions
-        if (instruction instanceof StoreInstruction) checkStore(handle);
-    }
-
-    // Method that check if a variable value is used which implies that the variable is not dead.
-    private void checkVariableLoad(InstructionHandle handle) {
-        int key = ((LoadInstruction) handle.getInstruction()).getIndex();
-        loadInstructions.push(handle);
-        variableUsed.put(key, true);
-    }
-
-    private void checkLoad(InstructionHandle handle) {
-        loadInstructions.push(handle); // pushes the load instruction onto the stack.
-    }
-
-    private void checkStore(InstructionHandle handle) {
-        int key = ((StoreInstruction) handle.getInstruction()).getIndex();
-        variableUsed.put(key, false); // has not been used yet, so set to false.
-
-        InstructionHandle[] instructions = {loadInstructions.pop(), handle}; // protect the LOAD & STORE Instructions.
-        variableInstructions.put(key, instructions);
-    }
 
 
     // <=========================================== Auxiliary Methods ================================================>

@@ -5,4 +5,4 @@ Testcase: testMethodThree took 0.001 sec
 Testcase: testMethodFour took 0.001 sec
 Testcase: testMethodOne took 0 sec
 Testcase: testMethodTwoReturn took 0 sec
-Testcase: testMethodTwoOut took 0.001 sec
+Testcase: testMethodTwoOut took 0.002 sec
