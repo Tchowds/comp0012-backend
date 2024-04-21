@@ -40,7 +40,7 @@ public class DynamicVariableFoldingTest
     public void testMethodTwoOut()
     {
         dvf.methodTwo();
-        assertEquals("true\n", outContent.toString());
+        assertEquals("true" + System.lineSeparator(), outContent.toString());
     }
 
     @Test

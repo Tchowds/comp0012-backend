@@ -32,7 +32,7 @@ public class SimpleFoldingTest {
     @Test
     public void testSimple(){
         sf.simple();
-        assertEquals("12412\n", outContent.toString());
+        assertEquals("12412" + System.lineSeparator(), outContent.toString());
     }
 
 }
