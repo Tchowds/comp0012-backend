@@ -29,8 +29,8 @@ public class ConstantFolder {
     private boolean inLoop;
 
     private Stack<Number> values;
-    private Stack<InstructionHandle> methodInstructions;
     private HashMap<Integer, Number> variables;
+    private Stack<InstructionHandle> methodInstructions;
     private List<InstructionHandle> loopsTerminators;
 
     public ConstantFolder(String classFilePath) {
@@ -42,7 +42,6 @@ public class ConstantFolder {
     }
 
     // ---OPTIMISATION---
-    
     public void optimise() {
         cgen = new ClassGen(original);
         cgen.setMajor(50);
@@ -58,11 +57,11 @@ public class ConstantFolder {
         this.optimised = cgen.getJavaClass();
     }
 
+    // ---RUN OPTIMISATION---
     private void runOptimisation(){
-        int numberOfMethods = cgen.getMethods().length;
-        for (int methodPosition = 0; methodPosition < numberOfMethods; methodPosition++ ) {
+        for (int i = 0; i < cgen.getMethods().length; i++ ) {
 
-            Method method = cgen.getMethodAt(methodPosition);
+            Method method = cgen.getMethodAt(i);
             Code methodCode = method.getCode();
 
             InstructionList instructionList = new InstructionList(methodCode.getCode()); // gets code and makes an list of Instructions.
@@ -112,6 +111,7 @@ public class ConstantFolder {
         }
     }
 
+    // Method that handles the store and load instructions.
     private void handleStoreLoad(Instruction instruction, InstructionHandle handle, InstructionList instructionList){
         if(instruction instanceof StoreInstruction){
             methodInstructions.pop();
@@ -127,6 +127,8 @@ public class ConstantFolder {
         }
     }
 
+    
+    // Method that handles the arithmetic and logic instructions.
     private void handleArithmeticLogic(Instruction instruction,InstructionHandle handle, InstructionList instructionList){
         if(inLoop){
             return;
@@ -145,9 +147,9 @@ public class ConstantFolder {
                 delInstruction(instructionList, handle, targetHandle.getPrev());
             }
         } else if(instruction instanceof LCMP){
-            long first = (Long) values.pop();
-            long second = (Long) values.pop();
-            int result = (first > second) ? 1 : (first < second) ? -1 : 0;
+            long num1 = (Long) values.pop();
+            long num2 = (Long) values.pop();
+            int result = (num1 > num2) ? 1 : (num1 < num2) ? -1 : 0;
             delInstruction(instructionList, methodInstructions.pop());
             delInstruction(instructionList, methodInstructions.pop());
             values.push(result);
@@ -159,6 +161,7 @@ public class ConstantFolder {
 
     // ---HELPERS---
 
+    // Compares the values on the top of the stack and the instruction.
     // NOTE: Compiler changes from > to <=
     private boolean perfCompare(InstructionList instructionList, IfInstruction instruction){
         if (instruction instanceof  IFLE || instruction instanceof IFLT || instruction instanceof IFGE ||
@@ -166,11 +169,11 @@ public class ConstantFolder {
             delInstruction(instructionList, methodInstructions.pop());
             return comparisonEval(values.pop(), instruction);
         }
-        Number first = values.pop();
-        Number second = values.pop();
+        Number num1 = values.pop();
+        Number num2 = values.pop();
         delInstruction(instructionList, methodInstructions.pop());
         delInstruction(instructionList, methodInstructions.pop());
-        return comparisonEval(first, second, instruction);
+        return comparisonEval(num1, num2, instruction);
     }
 
     //Loads the loop bounds (the first instruction and last instruction of a loop) into an ArrayList.
@@ -212,17 +215,17 @@ public class ConstantFolder {
         return false;
     }
 
-    // Removed instructions from list
+    // Remove instructions from list
     private void delInstruction(InstructionList instructionList, InstructionHandle handle) {
         try {
             instructionList.delete(handle);
-        } catch (TargetLostException ignored) { }
+        } catch (TargetLostException e) { }
     }
 
     private void delInstruction(InstructionList instructionList, InstructionHandle handle, InstructionHandle targetHandle) {
         try {
             instructionList.delete(handle, targetHandle);
-        } catch (TargetLostException ignored){ }
+        } catch (TargetLostException e){ }
     }
 
 
@@ -240,6 +243,7 @@ public class ConstantFolder {
 
 
     // ---CONVERSION---
+    // Converts the value to the type of the instruction.
     private static Number convertType(Instruction instruction, Number num) {
         if (instruction instanceof L2I || instruction instanceof F2I || instruction instanceof D2I){
             return num.intValue();
@@ -253,27 +257,30 @@ public class ConstantFolder {
         return -1;
     }
 
-	private static Number arithmeticEval(Number second, Number first, Instruction nextInstruction) {
+    // ---ARITHMETIC---
+	private static Number arithmeticEval(Number num2, Number num1, Instruction nextInstruction) {
         switch (nextInstruction.getClass().getSimpleName()) {
-        case "IADD": return first.intValue() + second.intValue();
-        case "ISUB":return first.intValue() - second.intValue();
-        case "IMUL":return first.intValue() * second.intValue();
-        case "IDIV":return first.intValue() / second.intValue();
-        case "LADD":return first.longValue() + second.longValue();
-        case "LSUB": return first.longValue() - second.longValue();
-        case "LMUL":return first.longValue() * second.longValue();
-        case "LDIV":return first.longValue() / second.longValue();
-        case "FADD":return first.floatValue() + second.floatValue();
-        case "FSUB":return first.floatValue() - second.floatValue();
-        case "FMUL":return first.floatValue() * second.floatValue();
-        case "FDIV":return first.floatValue() / second.floatValue();
-        case "DADD":return first.doubleValue() + second.doubleValue();
-        case "DSUB": return first.doubleValue() - second.doubleValue();
-        case "DMUL":return first.doubleValue() * second.doubleValue();
-        case "DDIV":return first.doubleValue() / second.doubleValue();
+        case "IADD": return num1.intValue() + num2.intValue();
+        case "ISUB":return num1.intValue() - num2.intValue();
+        case "IMUL":return num1.intValue() * num2.intValue();
+        case "IDIV":return num1.intValue() / num2.intValue();
+        case "LADD":return num1.longValue() + num2.longValue();
+        case "LSUB": return num1.longValue() - num2.longValue();
+        case "LMUL":return num1.longValue() * num2.longValue();
+        case "LDIV":return num1.longValue() / num2.longValue();
+        case "FADD":return num1.floatValue() + num2.floatValue();
+        case "FSUB":return num1.floatValue() - num2.floatValue();
+        case "FMUL":return num1.floatValue() * num2.floatValue();
+        case "FDIV":return num1.floatValue() / num2.floatValue();
+        case "DADD":return num1.doubleValue() + num2.doubleValue();
+        case "DSUB": return num1.doubleValue() - num2.doubleValue();
+        case "DMUL":return num1.doubleValue() * num2.doubleValue();
+        case "DDIV":return num1.doubleValue() / num2.doubleValue();
         default:return -1;
         }
 	}
+
+    // ---COMPARISON---
     private static boolean comparisonEval(Number num, Instruction instruction) {
         switch (instruction.getClass().getSimpleName()) {
             case "IFEQ": return num.intValue() == 0;
@@ -298,6 +305,7 @@ public class ConstantFolder {
         }
     }
 
+    // ---LOAD CONSTANT---
     private static Number loadConst(Instruction nextInstruction, ConstantPoolGen cpgen) {
         switch (nextInstruction.getClass().getSimpleName()) {
             case "LDC": return (Number) ((LDC) nextInstruction).getValue(cpgen);
@@ -311,6 +319,8 @@ public class ConstantFolder {
             default: return -1;
         }
     }
+
+    // ---PUSH CONSTANT---
     private static Instruction pushConst(Number num, ConstantPoolGen cpgen) {
         switch (num.getClass().getSimpleName()) {
             case "Double": return new LDC2_W(cpgen.addDouble((Double) num));
